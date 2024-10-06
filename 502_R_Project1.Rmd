@@ -73,7 +73,32 @@ AdjWaldCI <- function(y, n, alpha = 0.05){
 }
 
 ## Clopper-Pearson (exact) interval
+Clopper-Pearson interval is referred to as "exact" interval. This interval is guaranteed to have coverage probability of at least $1 - \alpha$ for every value of $p$. When $y = 1,2, \cdots , n - 1$, the confidence interval is:
 
+$$
+\left[ 1 + \frac{n-y+1}{yF_{2y,2(n-y+1),\frac{\alpha}{2}}} \right]^{-1} < p < \left[ 1 + \frac{n-y}{(y+1)F_{2(y+1),2(n-y),1-\frac{\alpha}{2}}} \right]^{-1},
+$$
+
+where the $F_{a,b,c}$ denotes the $c$ quantile from the F distribution with degrees of freedom $a$ and $b$. 
+
+When $y = 0$, we set the interval to be $[0,0]$ and When $y = n$, we set the interval to be $[1,1]$. The function of calculating Clopper-Pearson interval is given below:
+
+```{r}
+ClopperPearsonCI <- function(y, n, alpha = 0.05){
+  # Handle special cases where y is 0 or y equals n
+  if (y==0){
+    c("C-P interval lower" = 0, 
+      "C-P interval upper" = 0)
+    } else if (y==n){
+      c("C-P interval lower" = 1, 
+        "C-P interval upper" = 1)
+    } else {
+      # General case for Clopper-Pearson CI using F-distribution
+  c("C-P interval lower" = 1 / (1 + ((n-y+1) / (y * qf(alpha/2, 2*y, 2*(n-y+1))))), 
+    "C-P interval upper" = 1 / (1 + ((n-y) / ((y+1) * qf(1-(alpha/2), 2*(y+1), 2*(n-y))))))
+    }
+}
+```
 ## Score interval
 
 Score tests, and in particular their standard errors, are based on the
