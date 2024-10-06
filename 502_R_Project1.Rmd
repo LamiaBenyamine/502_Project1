@@ -39,6 +39,21 @@ $$
 \hat{p} - z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} < p < \hat{p} + z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}},
 $$
 
+where the $z_c$ denotes the $c$ quantile of the standard normal distribution. 
+
+To calculate the Wald interval for $p$, we need to use sample's probability $\hat{p}$, sample size $n$ and the confidence level $1-\alpha$. The function of calculating Wald Interval is given below:
+
+```{r}
+WaldCI <- function(y, n, alpha = 0.05){
+  p_hat = y/n  # Estimate of the probability of success
+  # Return lower and upper bound of Wald CI
+  c("wald ci lower" = p_hat - qnorm(1-alpha/2)*sqrt((p_hat*(1-p_hat))/n),
+    "wald ci upper" = p_hat + qnorm(1-alpha/2)*sqrt((p_hat*(1-p_hat))/n))
+}
+```
+
+In this project, we use $\alpha = 0.05$ as default in all calculation.
+
 ## Adjusted Wald interval
 
 ## Clopper-Pearson (exact) interval
