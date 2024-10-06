@@ -17,7 +17,7 @@ will review several different methods using R and compare the
 performance of the confidence intervals for various sample sizes and
 probabilities for these three properties:
 
--    The proportion of intervals that capture the true value
+-   The proportion of intervals that capture the true value
 
 -   The proportion that miss above and proportion that miss below
 
@@ -44,6 +44,11 @@ Score tests, and in particular their standard errors, are based on the
 log-likelihood at the null hypothesis value of the parameter, whereas
 Wald tests are based on the log-likelihood at the maximum likelihood
 estimate.
+
+```{r}
+#example
+
+```
 
 ## Raw percentile interval using a parametric bootstrap
 
