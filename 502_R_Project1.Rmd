@@ -46,7 +46,7 @@ Wald tests are based on the log-likelihood at the maximum likelihood
 estimate.
 
 ```{r}
-#example
+#example code block
 
 ```
 
