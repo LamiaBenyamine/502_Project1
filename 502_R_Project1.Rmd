@@ -122,6 +122,34 @@ data from a fitted curve, in this case, a binomial distribution.
 
 This method creates a ‘t-type’ statistic to use a pivot.
 
+## Creation of data
+
+We generated $N = 1000$ random samples from a binomial where sample size $n$ varies across 15, 30, to 100 and true proportion $p$ varies from 0.01 to 0.99 (15 total values of p). 
+
+```{r}
+# Set values
+N <- 1000 # Number of random samples
+n <- c(15, 30, 100) # Values of n
+p <- seq(0.01, 0.99, length.out = 15) # Values of p
+B <- 100 # Number of bootstrap resamples
+
+# Function to generate random binomial sample data for each combination of n and p
+GetData <- function(n_vals, p_vals, N = 1000) { 
+  sample_data <- list()  # Initialize a list to store sample data
+  for (n in n_vals) {
+    for (p in p_vals) {
+      samples <- rbinom(N, size = n, prob = p)  # Generate N binomial samples
+      col_name <- paste0("n", n, "p", p)  # Create column name for the dataset
+      sample_data[[col_name]] <- samples  # Store samples in the list
+    }
+  }
+  return(sample_data)
+}
+sample_data <- GetData(n, p, N)
+
+```
+
+
 # RESULTS
 
 # CONCLUSION
