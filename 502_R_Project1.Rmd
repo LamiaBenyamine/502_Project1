@@ -1,0 +1,61 @@
+---
+title: "502_Project1"
+author: "Ming Cai & Lamia Benyamine"
+date: "2024-10-06"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# INTRODUCTION
+
+There are many methods to approximate the probability of success, p,
+from a Binomial random sample, however, not all have the same coverage
+probabilities or average length of the confidence interval. This report
+will review several different methods using R and compare the
+performance of the confidence intervals for various sample sizes and
+probabilities for these three properties:
+
+-    The proportion of intervals that capture the true value
+
+-   The proportion that miss above and proportion that miss below
+
+-   The average length of the interval
+
+We will use data collected from 1,00 random samples from a binomial
+distribution where n varies from 15, 13, to 100 and p varies from 0.01
+to 0.99 across each approximation method. The methods reviewed in this
+report are: Wald interval Adjusted Wald interval Clopper-Pearson (exact)
+interval Score interval Raw percentile interval using a parametric
+bootstrap Bootstrap t interval using a parametric bootstrap
+
+# SIMULATION METHODS
+
+## Wald Interval
+
+## Adjusted Wald interval
+
+## Clopper-Pearson (exact) interval
+
+## Score interval
+
+Score tests, and in particular their standard errors, are based on the
+log-likelihood at the null hypothesis value of the parameter, whereas
+Wald tests are based on the log-likelihood at the maximum likelihood
+estimate.
+
+## Raw percentile interval using a parametric bootstrap
+
+This method uses the empirical 1 − α/2 quantile for the lower value and
+α/2 quantile for the upper value as the confidence interval of the
+bootstrap distribution. For a parametric bootstrap, we will resample the
+data from a fitted curve, in this case, a binomial distribution.
+
+## Bootstrap t interval using a parametric bootstrap
+
+This method creates a ‘t-type’ statistic to use a pivot.
+
+# RESULTS
+
+# CONCLUSION
