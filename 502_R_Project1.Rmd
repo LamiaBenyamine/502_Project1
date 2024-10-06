@@ -33,6 +33,11 @@ bootstrap Bootstrap t interval using a parametric bootstrap
 # SIMULATION METHODS
 
 ## Wald Interval
+The formula of calculating Wald interval is:
+
+$$
+\hat{p} - z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} < p < \hat{p} + z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}},
+$$
 
 ## Adjusted Wald interval
 
