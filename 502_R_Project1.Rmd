@@ -51,8 +51,7 @@ WaldCI <- function(y, n, alpha = 0.05){
     "wald ci upper" = p_hat + qnorm(1-alpha/2)*sqrt((p_hat*(1-p_hat))/n))
 }
 ```
-
-In this project, we use $\alpha = 0.05$ as default in all calculation.
+We use $\alpha = 0.05$ as default in all calculation.
 
 ## Adjusted Wald interval
 
