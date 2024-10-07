@@ -126,16 +126,85 @@ ScoreCI <- function(y, n, alpha = 0.05){
 }
 ```
 
-## Raw percentile interval using a parametric bootstrap
+## Raw percentile interval and Bootstrap t interval function (both using a parametric bootstrap)
 
-This method uses the empirical 1 − α/2 quantile for the lower value and
-α/2 quantile for the upper value as the confidence interval of the
-bootstrap distribution. For a parametric bootstrap, we will resample the
-data from a fitted curve, in this case, a binomial distribution.
+To find the Raw percentile interval, we need to find the $\frac{\alpha}{2}$ quantile and the $1-\frac{\alpha}{2}$ quantile of the $\hat{p}$ of samples.
 
-## Bootstrap t interval using a parametric bootstrap
+$$
+\hat{p}_{\frac{\alpha}{2}} < p < \hat{p}_{1-\frac{\alpha}{2}} 
+$$
 
-This method creates a ‘t-type’ statistic to use a pivot.
+where the $\hat{p}_{c}$ denotes the $c$ quantile of the proportion of the samples.
+
+To find the Bootstrap t interval, we use following steps:
+
+1. Calculate the mean of our sample's $\hat{p}$ to generate bootstrapped $\hat{p}_{boot}$, 
+
+2. Use the mean of bootstrapped $\hat{p}_{boot}$ to generate secondary bootstrapped $\hat{p}_{boot2}$,
+
+3. Use secondary bootstrapped $\hat{p}_{boot2}$ to find the estimated standard error of $\hat{p}_{boot}$,
+
+4. Calculate the interval based on formula.
+
+$$
+\hat{p} - t_{1-{\frac{\alpha}{2}}}\cdot \hat{SE} < p < \hat{p} - t_{\frac{\alpha}{2}}\cdot \hat{SE}
+$$
+
+where the $t_{c}$ denotes the $c$ quantile of the bootstrapped t values, and
+
+$$
+T = \frac{\underset{\sim}{\hat{p}}-p}{\underset{\sim}{\hat{SE}}(\underset{\sim}{\hat{p}})}
+$$
+
+The function of finding Raw percentile interval and Bootstrap t interval is given below:
+
+```{r}
+BootstrapCI <- function(x, n, size, B, alpha = 0.05){
+ 
+   # Special case handling when x = 0 or x = size
+  if (x == 0) {
+    return(c(0, 0, 0, 0))  # Raw and t-bootstrap intervals set to [0, 0]
+  } else if (x == size) {
+    return(c(1, 1, 1, 1))  # Raw and t-bootstrap intervals set to [1, 1]
+  } else {
+    sample_p <- x/size # Estimate proportion
+    
+  # Calculate raw percentile interval from bootstrap samples
+  raw_lower <- quantile(sample_p, alpha / 2, na.rm = TRUE)
+  raw_upper <- quantile(sample_p, 1 - alpha / 2, na.rm = TRUE)
+  raw_interval <- c(raw_lower, raw_upper)
+  
+  # Bootstrap t interval calculations
+  p_hat <- mean(sample_p)
+  boot_estimates <- replicate(B, {
+    sim_data <- rbinom(n, size, prob = p_hat)  # Generate bootstrap sample
+    p_hat_boot <- mean(sim_data / size)  # Bootstrap estimate of proportion
+    
+    # Perform secondary bootstrap for standard error estimation
+    B2 <- 50
+    secondary_boot <- replicate(B2, {
+      sim_data2 <- rbinom(n, size, prob = p_hat_boot)  # Second bootstrap sample
+      p_hat_boot2 <- mean(sim_data2 / size)  # Bootstrap estimate
+      return(p_hat_boot2)
+    })
+    
+    estimated_SE_p_hat_boot <- sd(secondary_boot)  # Standard error
+    if (estimated_SE_p_hat_boot == 0) return(NA)  # Handle division by zero
+    
+    # Calculate t-statistic
+    p_boot_t <- (p_hat_boot - p_hat) / estimated_SE_p_hat_boot
+    return(p_boot_t)
+  })
+  
+  # Calculate the t-bootstrap intervals using quantiles
+  boot_t_interval <- c(p_hat - quantile(boot_estimates, 1 - alpha / 2, na.rm = TRUE) * sd(boot_estimates),
+                       p_hat - quantile(boot_estimates, alpha / 2, na.rm = TRUE) * sd(boot_estimates))
+  
+  # Return both raw percentile and t-bootstrap intervals
+  return(c(raw_interval, boot_t_interval))
+  }
+}
+```
 
 # RESULTS
 
