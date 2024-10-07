@@ -229,9 +229,7 @@ GetData <- function(n_vals, p_vals, N = 1000) {
   return(sample_data)
 }
 sample_data <- GetData(n, p, N)
-
 ```
-
 
 ## Execute the Monte Carlo simulation
 
