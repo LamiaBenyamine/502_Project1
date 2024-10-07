@@ -1,5 +1,5 @@
 ---
-title: "502_Project1"
+title: "ST502: Project 1"
 author: "Ming Cai & Lamia Benyamine"
 date: "2024-10-06"
 output: html_document
@@ -28,33 +28,55 @@ distribution where n varies from 15, 13, to 100 and p varies from 0.01
 to 0.99 across each approximation method. The methods reviewed in this
 report are: Wald interval Adjusted Wald interval Clopper-Pearson (exact)
 interval Score interval Raw percentile interval using a parametric
-bootstrap Bootstrap t interval using a parametric bootstrap
+bootstrap Bootstrap t interval using a parametric bootstrap. We will use
+$\alpha = 0.05$ as default in all calculations.
 
 # SIMULATION METHODS
 
 ## Wald Interval
+
 The formula of calculating Wald interval is:
 
 $$
 \hat{p} - z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} < p < \hat{p} + z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}},
 $$
 
-where the $z_c$ denotes the $c$ quantile of the standard normal distribution. 
+where the $z_c$ denotes the $c$ quantile of the standard normal
+distribution.
 
-To calculate the Wald interval for $p$, we need to use sample's probability $\hat{p}$, sample size $n$ and the confidence level $1-\alpha$. The function of calculating Wald Interval is given below:
+To calculate the Wald interval for $p$, we need to use sample's
+probability $\hat{p}$, sample size $n$ and the confidence level
+$1-\alpha$. The function of calculating Wald Interval is given below:
+
+for (i in y)  # Handle special cases
+  if (i == 0) {
+    return(c(0, 0))  # CI for y = 0
+  } else if (i == n) {
+    return(c(1, 1))  # CI for y = n
+  }
+  
 
 ```{r}
 WaldCI <- function(y, n, alpha = 0.05){
   p_hat = y/n  # Estimate of the probability of success
+  
+
   # Return lower and upper bound of Wald CI
-  c("wald ci lower" = p_hat - qnorm(1-alpha/2)*sqrt((p_hat*(1-p_hat))/n),
+  CI <- c("wald ci lower" = p_hat - qnorm(1-alpha/2)*sqrt((p_hat*(1-p_hat))/n),
     "wald ci upper" = p_hat + qnorm(1-alpha/2)*sqrt((p_hat*(1-p_hat))/n))
+  contain <- (CI[1] < p) & (CI[2] > p)
+  #Find width
+  width <- CI[2] - CI[1]
+  list(phat = p_hat, CIL = CI[1], CIU = CI[2], contain = contain, width = width, n = n)
 }
 ```
-We use $\alpha = 0.05$ as default in all calculation.
 
 ## Adjusted Wald interval
-To overcome the poor performance of Wald interval, adjusted Wald interval was proposed. The formula of adjusted Wald interval is almost the same as Wald interval, except that we add 2 successes and 2 failures to the sample data set:
+
+To overcome the poor performance of Wald interval, adjusted Wald
+interval was proposed. The formula of adjusted Wald interval is almost
+the same as Wald interval, except that we add 2 successes and 2 failures
+to the sample data set:
 
 $$
 \tilde{p} - z_{1-\frac{\alpha}{2}}\sqrt{\frac{\tilde{p}(1-\tilde{p})}{n}} < p < \tilde{p} + z_{1-\frac{\alpha}{2}}\sqrt{\frac{\tilde{p}(1-\tilde{p})}{n}},
@@ -74,15 +96,22 @@ AdjWaldCI <- function(y, n, alpha = 0.05){
 ```
 
 ## Clopper-Pearson (exact) interval
-Clopper-Pearson interval is referred to as "exact" interval. This interval is guaranteed to have coverage probability of at least $1 - \alpha$ for every value of $p$. When $y = 1,2, \cdots , n - 1$, the confidence interval is:
+
+Clopper-Pearson interval is referred to as an "exact" interval. This
+interval is guaranteed to have coverage probability of at least
+$1 - \alpha$ for every value of $p$. When $y = 1,2, \cdots , n - 1$, the
+confidence interval is:
 
 $$
 \left[ 1 + \frac{n-y+1}{yF_{2y,2(n-y+1),\frac{\alpha}{2}}} \right]^{-1} < p < \left[ 1 + \frac{n-y}{(y+1)F_{2(y+1),2(n-y),1-\frac{\alpha}{2}}} \right]^{-1},
 $$
 
-where the $F_{a,b,c}$ denotes the $c$ quantile from the F distribution with degrees of freedom $a$ and $b$. 
+where the $F_{a,b,c}$ denotes the $c$ quantile from the F distribution
+with degrees of freedom $a$ and $b$.
 
-When $y = 0$, we set the interval to be $[0,0]$ and When $y = n$, we set the interval to be $[1,1]$. The function of calculating Clopper-Pearson interval is given below:
+When $y = 0$, we set the interval to be $[0,0]$ and When $y = n$, we set
+the interval to be $[1,1]$. The function of calculating Clopper-Pearson
+interval is given below:
 
 ```{r}
 ClopperPearsonCI <- function(y, n, alpha = 0.05){
@@ -97,21 +126,23 @@ ClopperPearsonCI <- function(y, n, alpha = 0.05){
       # General case for Clopper-Pearson CI using F-distribution
   c("C-P interval lower" = 1 / (1 + ((n-y+1) / (y * qf(alpha/2, 2*y, 2*(n-y+1))))), 
     "C-P interval upper" = 1 / (1 + ((n-y) / ((y+1) * qf(1-(alpha/2), 2*(y+1), 2*(n-y))))))
-    }
-}
+}}
 ```
+
 ## Score interval
 
 Score tests, and in particular their standard errors, are based on the
 log-likelihood at the null hypothesis value of the parameter, whereas
 Wald tests are based on the log-likelihood at the maximum likelihood
-estimate. Score interval can be used with almost all sample sizes and $p$ values. The formula is given below:
+estimate. Score interval can be used with almost all sample sizes and
+$p$ values. The formula is given below:
 
 $$
 \frac{\hat{p}+\frac{z_{1-\frac{\alpha}{2}}^2}{2n}-z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p}) + \frac{z_{1-\frac{\alpha}{2}}^2}{4n}}{n}}}{1+\frac{z_{1-\frac{\alpha}{2}}^2}{n}} < p < \frac{\hat{p}+\frac{z_{1-\frac{\alpha}{2}}^2}{2n}+z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p}) + \frac{z_{1-\frac{\alpha}{2}}^2}{4n}}{n}}}{1+\frac{z_{1-\frac{\alpha}{2}}^2}{n}},
 $$
 
-where the $z_c$ denotes the $c$ quantile of the standard normal distribution.
+where the $z_c$ denotes the $c$ quantile of the standard normal
+distribution.
 
 And the function of calculating Score interval is given below:
 
@@ -129,35 +160,43 @@ ScoreCI <- function(y, n, alpha = 0.05){
 
 ## Raw percentile interval and Bootstrap t interval function (both using a parametric bootstrap)
 
-To find the Raw percentile interval, we need to find the $\frac{\alpha}{2}$ quantile and the $1-\frac{\alpha}{2}$ quantile of the $\hat{p}$ of samples.
+To find the Raw percentile interval, we need to find the
+$\frac{\alpha}{2}$ quantile and the $1-\frac{\alpha}{2}$ quantile of the
+$\hat{p}$ of samples.
 
 $$
 \hat{p}_{\frac{\alpha}{2}} < p < \hat{p}_{1-\frac{\alpha}{2}} 
 $$
 
-where the $\hat{p}_{c}$ denotes the $c$ quantile of the proportion of the samples.
+where the $\hat{p}_{c}$ denotes the $c$ quantile of the proportion of
+the samples.
 
 To find the Bootstrap t interval, we use following steps:
 
-1. Calculate the mean of our sample's $\hat{p}$ to generate bootstrapped $\hat{p}_{boot}$, 
+1.  Calculate the mean of our sample's $\hat{p}$ to generate
+    bootstrapped $\hat{p}_{boot}$,
 
-2. Use the mean of bootstrapped $\hat{p}_{boot}$ to generate secondary bootstrapped $\hat{p}_{boot2}$,
+2.  Use the mean of bootstrapped $\hat{p}_{boot}$ to generate secondary
+    bootstrapped $\hat{p}_{boot2}$,
 
-3. Use secondary bootstrapped $\hat{p}_{boot2}$ to find the estimated standard error of $\hat{p}_{boot}$,
+3.  Use secondary bootstrapped $\hat{p}_{boot2}$ to find the estimated
+    standard error of $\hat{p}_{boot}$,
 
-4. Calculate the interval based on formula.
+4.  Calculate the interval based on formula.
 
 $$
 \hat{p} - t_{1-{\frac{\alpha}{2}}}\cdot \hat{SE} < p < \hat{p} - t_{\frac{\alpha}{2}}\cdot \hat{SE}
 $$
 
-where the $t_{c}$ denotes the $c$ quantile of the bootstrapped t values, and
+where the $t_{c}$ denotes the $c$ quantile of the bootstrapped t values,
+and
 
 $$
 T = \frac{\underset{\sim}{\hat{p}}-p}{\underset{\sim}{\hat{SE}}(\underset{\sim}{\hat{p}})}
 $$
 
-The function of finding Raw percentile interval and Bootstrap t interval is given below:
+The function of finding Raw percentile interval and Bootstrap t interval
+is given below:
 
 ```{r}
 BootstrapCI <- function(x, n, size, B, alpha = 0.05){
@@ -206,9 +245,12 @@ BootstrapCI <- function(x, n, size, B, alpha = 0.05){
   }
 }
 ```
+
 ## Creation of data
 
-We generated $N = 1000$ random samples from a binomial where sample size $n$ varies across 15, 30, to 100 and true proportion $p$ varies from 0.01 to 0.99 (15 total values of p). 
+We generated $N = 1000$ random samples from a binomial where sample size
+$n$ varies across 15, 30, to 100 and true proportion $p$ varies from
+0.01 to 0.99 (15 total values of p).
 
 ```{r}
 # Set values
@@ -217,8 +259,9 @@ n <- c(15, 30, 100) # Values of n
 p <- seq(0.01, 0.99, length.out = 15) # Values of p
 B <- 100 # Number of bootstrap resamples
 
+set.seed(4321)
 # Function to generate random binomial sample data for each combination of n and p
-GetData <- function(n_vals, p_vals, N = 1000) { 
+GetData <- function(n_vals, p_vals, N = N) { 
   sample_data <- list()  # Initialize a list to store sample data
   for (n in n_vals) {
     for (p in p_vals) {
@@ -234,7 +277,147 @@ sample_data <- GetData(n, p, N)
 
 ## Execute the Monte Carlo simulation
 
+### Results from Wald Simulation
+```{r}
+# Initialize a data frame to store the results
+waldci_results <- data.frame()
+
+# Loop through each sample in sample_data to compute CIs
+for (col_name in names(sample_data)) {
+  samples <- sample_data[[col_name]]  # Get the samples
+  n <- length(samples)  
+  
+  # Extract the n and p values from the column name
+  n_value <- as.numeric(sub("n(\\d+)p.*", "\\1", col_name))
+  p_value <- as.numeric(sub(".*p(\\d+\\.\\d+)", "\\1", col_name))
+  
+  # Compute the Wald CI
+  ci <- WaldCI(samples, n)
+  
+  # Store results
+  waldci_results <- rbind(waldci_results, data.frame(
+    Sample = col_name,
+    CI_Lower = ci[2],
+    CI_Upper = ci[3],
+    True_P = p_value,
+    Size = n_value,
+    Coverage_rate = (ci[2] <= p_value) & (ci[3] >= p_value), # Check if the true p value is within the CI
+    Miss_Above = !(ci[2] <= true_p),  # True p is above CI
+    Miss_Below = !(ci[3] >= true_p),   # True p is below CI
+    Width = ci[[3]] - ci[[2]] # Width of interval
+  ))
+}
+Wald_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = waldci_results, FUN = mean)
+```
+
+### Results from Adjusted Wald Simulation
+```{r}
+# Initialize a data frame to store the results
+adjwaldci_results <- data.frame()
+
+# Loop through each sample in sample_data to compute CIs
+for (col_name in names(sample_data)) {
+  samples <- sample_data[[col_name]]  # Get the samples
+  n <- length(samples)  
+  
+  # Extract the n and p values from the column name
+  n_value <- as.numeric(sub("n(\\d+)p.*", "\\1", col_name))
+  p_value <- as.numeric(sub(".*p(\\d+\\.\\d+)", "\\1", col_name))
+  
+  # Compute the Wald CI
+  ci <- AdjWaldCI(samples, n)
+  
+  # Store results
+  adjwaldci_results <- rbind(adjwaldci_results, data.frame(
+    Sample = col_name,
+    CI_Lower = ci[1],
+    CI_Upper = ci[2],
+    True_P = p_value,
+    Size = n_value,
+    Coverage_rate = (ci[1] <= p_value) & (ci[2] >= p_value), # Check if the true p value is within the CI
+    Miss_Above = !(ci[1] <= true_p),  # True p is above CI
+    Miss_Below = !(ci[2] >= true_p),   # True p is below CI
+    Width = ci[2] - ci[1] # Width of interval
+  ))
+}
+Adj_Wald_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = adjwaldci_results, FUN = mean)
+```
+
+
+### Results from Clopper Pearson Simulation
+```{r}
+# Initialize a data frame to store the results
+cpci_results <- data.frame()
+
+# Loop through each sample in sample_data to compute CIs
+for (col_name in names(sample_data)) {
+  samples <- sample_data[[col_name]]  # Get the samples
+  n <- length(samples)  
+  
+  # Extract the n and p values from the column name
+  n_value <- as.numeric(sub("n(\\d+)p.*", "\\1", col_name))
+  p_value <- as.numeric(sub(".*p(\\d+\\.\\d+)", "\\1", col_name))
+  
+  # Compute the Wald CI
+  ci <- ClopperPearsonCI(samples, n)
+  
+  # Store results
+  cpci_results <- rbind(cpci_results, data.frame(
+    Sample = col_name,
+    CI_Lower = ci[1],
+    CI_Upper = ci[2],
+    True_P = p_value,
+    Size = n_value,
+    Coverage_rate = (ci[1] <= p_value) & (ci[2] >= p_value), # Check if the true p value is within the CI
+    Miss_Above = !(ci[1] <= true_p),  # True p is above CI
+    Miss_Below = !(ci[2] >= true_p),   # True p is below CI
+    Width = ci[2] - ci[1] # Width of interval
+  ))
+}
+CP_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = cpci_results, FUN = mean)
+```
+
+### Results from Score Interval Simulation
+```{r}
+# Initialize a data frame to store the results
+scoreci_results <- data.frame()
+
+# Loop through each sample in sample_data to compute CIs
+for (col_name in names(sample_data)) {
+  samples <- sample_data[[col_name]]  # Get the samples
+  n <- length(samples)  
+  
+  # Extract the n and p values from the column name
+  n_value <- as.numeric(sub("n(\\d+)p.*", "\\1", col_name))
+  p_value <- as.numeric(sub(".*p(\\d+\\.\\d+)", "\\1", col_name))
+  
+  # Compute the Wald CI
+  ci <- ScoreCI(samples, n)
+  
+  # Store results
+  scoreci_results <- rbind(scoreci_results, data.frame(
+    Sample = col_name,
+    CI_Lower = ci[1],
+    CI_Upper = ci[2],
+    True_P = p_value,
+    Size = n_value,
+    Coverage_rate = (ci[1] <= p_value) & (ci[2] >= p_value), # Check if the true p value is within the CI
+    Miss_Above = !(ci[1] <= true_p),  # True p is above CI
+    Miss_Below = !(ci[2] >= true_p),   # True p is below CI
+    Width = ci[2] - ci[1] # Width of interval
+  ))
+}
+Score_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = scoreci_results, FUN = mean)
+```
 
 # RESULTS
+
+Combining results from all the above methods.
+
+```{r}
+
+Results <- list(Wald_Properties, Adj_Wald_Properties, CP_Properties, Score_Properties)
+```
+
 
 # CONCLUSION
