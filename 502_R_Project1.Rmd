@@ -543,9 +543,11 @@ t_Interval_Boot_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Be
 # RESULTS
 
 ## Summary Table
-Combining the results from the properties of all the above methods into a table.
 
-```{r}
+Combining the results from the properties of all the above methods into
+a table.
+
+```{r, warning = FALSE, message = FALSE}
 # Add an attribute column
 Wald_Properties$Method <- "Wald"
 Adj_Wald_Properties$Method <- "AdjWald"
@@ -557,12 +559,16 @@ t_Interval_Boot_Properties$Method <- "t-int boot"
 library(dplyr)
 # Combine all tables into one
 combined_properties <- arrange(rbind(Wald_Properties, Adj_Wald_Properties, CP_Properties, Score_Properties, Raw_Boot_Properties, t_Interval_Boot_Properties), Size)
+combined_properties
 ```
 
 ## Coverage Probability Grid
-This is a Comparison of Coverage Probabilities for the alpha 95% Wald, Adjusted Wald, Clopper-Pearson, Score, and Bootstrap Intervals for each sample size.
 
-```{r}
+This is a Comparison of Coverage Probabilities for the alpha 95% Wald,
+Adjusted Wald, Clopper-Pearson, Score, and Bootstrap Intervals for each
+sample size.
+
+```{r, warning = FALSE, message = FALSE}
 library(ggplot2)
 library(tidyr)
 #combine all the CI results to get the coverage probability by p value
@@ -586,10 +592,11 @@ ggplot(aes(x = True_P, y = Coverage_rate)) +
 
 ## Interval Length Grid
 
-This is a Comparison of interval lengths for the alpha 95% Wald, Adjusted Wald, Clopper-Pearson, Score, and Bootstrap Intervals for each sample size.
+This is a Comparison of interval lengths for the alpha 95% Wald,
+Adjusted Wald, Clopper-Pearson, Score, and Bootstrap Intervals for each
+sample size.
 
-
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Create the line graph for Interval Length
 combined_results |>
 ggplot(aes(x = True_P, y = Width)) +
@@ -600,6 +607,7 @@ ggplot(aes(x = True_P, y = Width)) +
   theme(  # Remove major & minor grid lines and keep borders.Update x-axis label to avoid overlap
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_rect(color = "black"), axis.text.x = element_text(size = 6), axis.text.y = element_text(size = 8), axis.title.x = element_blank(), axis.title.y = element_blank())
 ```
+
 ### Standard Error of Interval Widths
 
 ```{r}
@@ -612,8 +620,51 @@ average_lengths <- combined_results |>
   pivot_wider(
     names_from = Size,
     values_from = c(Avg_Width, SE_Width))
+average_lengths
 ```
+
+## Review Results
+
+The observed coverage began to get closer to the expected 0.95 level as
+the sample size grew. The Average Coverage Probability grid shows the
+coverage rate steadies out as the sizse grows, so there is less
+variability. We do see an improvement between the Wald and the Adjusted
+Wald intervals, but the t-interval bootstrap  has the highest
+coverage probability with 0.94 and Wald with the lowest at 0.89 for
+sample size 100. The Average Interval Length grid illustrates the
+interval lengths decreasing as n grows, with the Raw Percentile
+Bootstrap having the smallest interval length on average and
+t-interval having the largest for n = 100. Both bootstrap intervals
+have the lowest standard error of 0.03 and Wald the lowest again with
+a standard error of 0.014 for the average interval length of size 100.
+In the smallest sample size the t-interval Bootstrap has the highest
+coverage probability, but it has the widest interval length on average.
 
 # CONCLUSION
 
-The observed coverage began to get closer to the expected 0.95 level as the sample size grew. We do see an improvement between the Wald and the Adjusted Wald intervals
+Rank the coverage probabilities and the interval lengths by method to
+find an overall best method.
+
+```{r}
+ranked_prop <- combined_properties |>
+  group_by(Size) |>
+  arrange(desc(Coverage_rate)) |>
+  mutate(Coverage_Rank = row_number()) |>
+  arrange(Width) |>
+  mutate(length_Rank = row_number()) 
+
+avg_ranks_by_method <- ranked_prop |>
+  group_by(Method) |>
+  summarise(
+    Avg_Coverage_Rank = mean(Coverage_Rank, na.rm = TRUE),
+    Avg_Length_Rank = mean(length_Rank, na.rm = TRUE), .groups = 'drop')
+
+# Now average those averages for a final ranking
+final_avg_ranks <- avg_ranks_by_method |>
+  group_by(Method) |>
+  summarise(Overall_Avg_Rank = mean(c(Avg_Coverage_Rank, Avg_Length_Rank)), .groups = 'drop') |>
+  arrange(Overall_Avg_Rank)
+final_avg_ranks
+```
+
+Based on these results, the Score interval  has the overall best results across all sample sizes. There are other more complex methods for creating confidence intervals that could be tested, along with increasing the number of samples that are taken for each method and size.
