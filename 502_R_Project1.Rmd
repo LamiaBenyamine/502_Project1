@@ -275,17 +275,21 @@ BootstrapCI <- function(y, n, B, alpha = 0.05) {
   boot_t_interval_low <- numeric(length(y))
   boot_t_interval_up <- numeric(length(y))
 
+  set.seed(4321)
   # Loop through each success value
   for (i in seq_along(y)) {
-    # Estimate the proportion
-    p_hat <- y[i] / n
+      # Estimate the proportion
+      p_hat <- y[i] / n
 
-    # Bootstrap t interval calculations
-    set.seed(4321)
-    boot_estimates <- replicate(B, {
+      # Bootstrap t interval calculations
+      boot_estimates <- replicate(B, {
       sim_data <- rbinom(1, n, prob = p_hat)  # Generate bootstrap sample
       p_hat_boot <- sim_data / n  # Bootstrap estimate of proportion
 
+      # Return NA if p_hat_boot is 0 or 1
+      if (p_hat_boot == 0 || p_hat_boot == 1) {
+        return(c(NA, NA))
+      }
       # Perform secondary bootstrap for standard error estimation
       B2 <- 50
       secondary_boot <- replicate(B2, {
@@ -307,9 +311,13 @@ BootstrapCI <- function(y, n, B, alpha = 0.05) {
     raw_lower[i] <- quantile(boot_estimates[1, ], alpha / 2, na.rm = TRUE)
     raw_upper[i] <- quantile(boot_estimates[1, ], 1 - alpha / 2, na.rm = TRUE)
 
-    # Calculate the t-bootstrap intervals using quantiles
-    boot_t_interval_low[i] <- p_hat - quantile(boot_estimates[2, ], 1 - alpha / 2, na.rm = TRUE) * sd(boot_estimates[1, ])
-    boot_t_interval_up[i] <- p_hat - quantile(boot_estimates[2, ], alpha / 2, na.rm = TRUE) * sd(boot_estimates[1, ])
+    # Filter out invalid p_hat_boot and infinite t-statistics
+    valid_boot_est <- na.omit(boot_estimates[1, ])
+    valid_t_stat <- boot_estimates[2, is.finite(boot_estimates[2, ])]
+    
+    # Calculate the t-bootstrap intervals using quantiles of valid t-stats
+    boot_t_interval_low[i] <- p_hat - quantile(valid_t_stat, 1 - alpha / 2, na.rm = TRUE) * sd(valid_boot_est)
+    boot_t_interval_up[i] <- p_hat - quantile(valid_t_stat, alpha / 2, na.rm = TRUE) * sd(valid_boot_est)
   }
   
   # combine intervals into one list
@@ -417,7 +425,7 @@ for (col_name in names(sample_data)) {
 Adj_Wald_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = adjwaldci_results, FUN = mean)
 ```
 
-### Results from Clopper Pearson Simulation
+### Clopper Pearson Simulation
 
 ```{r}
 # Initialize a data frame to store the results
@@ -449,7 +457,7 @@ for (col_name in names(sample_data)) {
 CP_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = cpci_results, FUN = mean)
 ```
 
-### Results from Score Interval Simulation
+### Score Interval Simulation
 
 ```{r}
 # Initialize a data frame to store the results
@@ -482,7 +490,7 @@ for (col_name in names(sample_data)) {
 Score_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Below, Width) ~ Size, data = scoreci_results, FUN = mean)
 ```
 
-### Results from Bootstrap Interval Simulation (Raw percentile & t-interval)
+### Bootstrap Interval Simulation (Raw percentile & t-interval)
 
 ```{r}
 # Initialize a data frame to store the results and set the replication values
@@ -534,7 +542,8 @@ t_Interval_Boot_Properties <- aggregate(cbind(Coverage_rate, Miss_Above, Miss_Be
 
 # RESULTS
 
-Combining the results from the properties of all the above methods.
+## Summary Table
+Combining the results from the properties of all the above methods into a table.
 
 ```{r}
 # Add an attribute column
@@ -545,13 +554,66 @@ Score_Properties$Method <- "Score"
 Raw_Boot_Properties$Method <- "Raw-% boot"
 t_Interval_Boot_Properties$Method <- "t-int boot"
 
+library(dplyr)
 # Combine all tables into one
-combined_results <- arrange(rbind(Wald_Properties, Adj_Wald_Properties, CP_Properties, Score_Properties, Raw_Boot_Properties, t_Interval_Boot_Properties), Size)
+combined_properties <- arrange(rbind(Wald_Properties, Adj_Wald_Properties, CP_Properties, Score_Properties, Raw_Boot_Properties, t_Interval_Boot_Properties), Size)
+```
 
-library(tidyverse)
-pivoted_results <- 
-  combined_results |>
-  arrange(Size, Coverage_rate)
+## Coverage Probability Grid
+This is a Comparison of Coverage Probabilities for the alpha 95% Wald, Adjusted Wald, Clopper-Pearson, Score, and Bootstrap Intervals for each sample size.
+
+```{r}
+library(ggplot2)
+library(tidyr)
+#combine all the CI results to get the coverage probability by p value
+combined_results <- rbind(waldci_results, adjwaldci_results, cpci_results, scoreci_results, raw_bootci_results, t_bootci_results)
+
+# Set the order of Method as a factor
+combined_results$Method <- factor(combined_results$Method, levels = c("Wald", "ADJWald", "CP", "Score", "Raw-boot", "t-interval"))
+
+# Create the line graph for Coverage Probability
+combined_results |>
+ggplot(aes(x = True_P, y = Coverage_rate)) +
+  geom_line(size = 0.5) + 
+  labs(title = "Average Coverage Probability by Sample Size and Method") +
+  facet_grid(Size ~ Method) +
+  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") + 
+  coord_cartesian(ylim = c(0, 1)) + # Set y-axis limits from 0 to 1
+  theme_bw() +
+  theme(  # Remove major & minor grid lines and keep borders.Update x-axis label to avoid overlap
+    panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_rect(color = "black"), axis.text.x = element_text(size = 6), axis.text.y = element_text(size = 8), axis.title.x = element_blank(), axis.title.y = element_blank())
+```
+
+## Interval Length Grid
+
+This is a Comparison of interval lengths for the alpha 95% Wald, Adjusted Wald, Clopper-Pearson, Score, and Bootstrap Intervals for each sample size.
+
+
+```{r}
+# Create the line graph for Interval Length
+combined_results |>
+ggplot(aes(x = True_P, y = Width)) +
+  geom_line(size = 0.5) + 
+  labs(title = "Average Interval Length by Sample Size and Method") +
+  facet_grid(Size ~ Method) +
+  theme_bw() +
+  theme(  # Remove major & minor grid lines and keep borders.Update x-axis label to avoid overlap
+    panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_rect(color = "black"), axis.text.x = element_text(size = 6), axis.text.y = element_text(size = 8), axis.title.x = element_blank(), axis.title.y = element_blank())
+```
+### Standard Error of Interval Widths
+
+```{r}
+# Calculate average interval length and standard error
+average_lengths <- combined_results |>
+  group_by(Size, Method) |>
+  summarise(
+    Avg_Width = mean(Width, na.rm = TRUE),
+    SE_Width = sd(Width, na.rm = TRUE) / sqrt(n()), .groups = 'drop') |>
+  pivot_wider(
+    names_from = Size,
+    values_from = c(Avg_Width, SE_Width))
 ```
 
 # CONCLUSION
+
+The observed coverage began to get closer to the expected 0.95 level as the sample size grew. We do see an improvement between the Wald and the Adjusted Wald intervals
