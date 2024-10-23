@@ -49,18 +49,15 @@ interval to be*** $[1,1]$***.***
 
 ## Wald Interval
 
-The formula of calculating Wald interval is:
+The formula for calculating the Wald confidence interval is:
 
 $$
 \hat{p} - z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} < p < \hat{p} + z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}},
 $$
 
-where the $z_c$ denotes the $c$ quantile of the standard normal
-distribution. To calculate the Wald interval for $p$, we need to use
-sample's probability $\hat{p}$, sample size $n$ and the confidence level
-$1-\alpha$.
+To calculate the Wald interval for a proportation $p$, we need three key components: the sample proportion $\hat{p}$, the sample size $n$ and the desired confidence level $1-\alpha$. The value $z_c$ represents the critical value corresponding to the c-th quantile of the standard normal distribution.
 
-The function for calculating the Wald Interval is given below:
+The formular for calculating the Wald Interval is:
 
 ```{r}
 WaldCI <- function(y, n, alpha = 0.05){
@@ -92,10 +89,7 @@ WaldCI <- function(y, n, alpha = 0.05){
 
 ## Adjusted Wald interval
 
-To overcome the poor performance of Wald interval, adjusted Wald
-interval was proposed. The formula of adjusted Wald interval is almost
-the same as Wald interval, except that we add 2 successes and 2 failures
-to the sample data set:
+To address the limitations of the Wald interval's performance, the adjusted Wald interval was introduced. The formula is nearly identical to that of the Wald interval, but with a modification: 2 successes and 2 failures are added to the sample data set.
 
 $$
 \tilde{p} - z_{1-\frac{\alpha}{2}}\sqrt{\frac{\tilde{p}(1-\tilde{p})}{n}} < p < \tilde{p} + z_{1-\frac{\alpha}{2}}\sqrt{\frac{\tilde{p}(1-\tilde{p})}{n}},
@@ -103,7 +97,7 @@ $$
 
 where $\tilde{p} = (Y+2)/(n+4)$.
 
-The function for calculating the Adjusted Wald Interval is given below:
+The formular for calculating the Adjusted Wald Interval is:
 
 ```{r}
 AdjWaldCI <- function(y, n, alpha = 0.05) {
@@ -136,20 +130,16 @@ AdjWaldCI <- function(y, n, alpha = 0.05) {
 
 ## Clopper-Pearson (exact) interval
 
-Clopper-Pearson interval is referred to as an "exact" interval. This
-interval is guaranteed to have coverage probability of at least
-$1 - \alpha$ for every value of $p$. When $y = 1,2, \cdots , n - 1$, the
-confidence interval is:
+The Clopper-Pearson interval, often an "exact" interval ensures that the coverage probability is at least
+for any $1 - \alpha$ for any value of $p$. The confidence interval is:
 
 $$
 \left[ 1 + \frac{n-y+1}{yF_{2y,2(n-y+1),\frac{\alpha}{2}}} \right]^{-1} < p < \left[ 1 + \frac{n-y}{(y+1)F_{2(y+1),2(n-y),1-\frac{\alpha}{2}}} \right]^{-1},
 $$
 
-where the $F_{a,b,c}$ denotes the $c$ quantile from the F distribution
-with degrees of freedom $a$ and $b$.
+the $F_{a,b,c}$ denotes the $c$ quantile from the F distribution with degrees of freedom $a$ and $b$.
 
-The function for calculating the Clopper-Pearson interval is given
-below:
+The formular for calculating the Clopper-Pearson interval is:
 
 ```{r}
 ClopperPearsonCI <- function(y, n, alpha = 0.05){
@@ -180,20 +170,15 @@ ClopperPearsonCI <- function(y, n, alpha = 0.05){
 
 ## Score interval
 
-Score tests, and in particular their standard errors, are based on the
-log-likelihood at the null hypothesis value of the parameter, whereas
-Wald tests are based on the log-likelihood at the maximum likelihood
-estimate. Score interval can be used with almost all sample sizes and
-$p$ values. The formula is given below:
+Score tests, including their standard errors, are derived from the log-likelihood evaluated at the parameter's null hypothesis value. In contrast, Wald tests are based on the log-likelihood evaluated at the maximum likelihood estimate. The score interval is applicable to a wide range of sample sizes and $p$ values. The formula is:
 
 $$
 \frac{\hat{p}+\frac{z_{1-\frac{\alpha}{2}}^2}{2n}-z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p}) + \frac{z_{1-\frac{\alpha}{2}}^2}{4n}}{n}}}{1+\frac{z_{1-\frac{\alpha}{2}}^2}{n}} < p < \frac{\hat{p}+\frac{z_{1-\frac{\alpha}{2}}^2}{2n}+z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p}) + \frac{z_{1-\frac{\alpha}{2}}^2}{4n}}{n}}}{1+\frac{z_{1-\frac{\alpha}{2}}^2}{n}},
 $$
 
-where the $z_c$ denotes the $c$ quantile of the standard normal
-distribution.
+here the $z_c$ represents the critical value corresponding to the c-th quantile of the standard normal distribution. 
 
-The function for calculating the Score interval is given below:
+The formula for calculating the Score interval is:
 
 ```{r}
 ScoreCI <- function(y, n, alpha = 0.05){
@@ -229,16 +214,14 @@ ScoreCI <- function(y, n, alpha = 0.05){
 
 ## Raw percentile interval and Bootstrap t interval function (both using a parametric bootstrap)
 
-To find the Raw percentile interval, we need to find the
-$\frac{\alpha}{2}$ quantile and the $1-\frac{\alpha}{2}$ quantile of the
-$\hat{p}$ of samples.
+To calculate the Raw percentile interval, we need to find the $\frac{\alpha}{2}$ quantile and the $1-\frac{\alpha}{2}$ quantile of the
+$\hat{p}$ of of the sample proportions $p$.
 
 $$
 \hat{p}_{\frac{\alpha}{2}} < p < \hat{p}_{1-\frac{\alpha}{2}} 
 $$
 
-where the $\hat{p}_{c}$ denotes the $c$ quantile of the proportion of
-the samples.
+here the $\hat{p}_{c}$ represents the $c$ quantile of the proportion of the samples.
 
 To find the Bootstrap t interval, we use following steps:
 
